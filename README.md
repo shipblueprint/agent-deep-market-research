@@ -93,7 +93,8 @@ flowchart TD
 ### 1. Install Dependencies
 
 ```bash
-cd c:\Users\lee\Desktop\test-agent
+git clone https://github.com/shipblueprint/deep-market-research-agent.git
+cd deep-market-research-agent
 uv install
 ```
 
@@ -270,7 +271,7 @@ The crew produces a comprehensive market research document that includes:
 ## Project Structure
 
 ```
-test-agent/
+deep-market-research-agent/
 ├── market_research_crew.py    # Main agent definition (agent, tasks, crew, CLI)
 ├── prompts/                   # Research methodology (gitignored — may be proprietary)
 │   ├── __init__.py            #   Exports all prompts + MARKET_RESEARCH_PROMPT
