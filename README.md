@@ -20,6 +20,30 @@ Earlier versions used 10 specialized agents, each with the same search tool. Tha
 | Hard to debug which agent failed | Single linear trace, easy to follow |
 | Tools duplicated across agents | Tools owned by one agent, used on demand |
 
+```mermaid
+flowchart LR
+    subgraph Old[10-Agent Crew — token multiplier]
+        direction TB
+        OA1[Agent 1<br/>preamble + context]
+        OA2[Agent 2<br/>preamble + context]
+        OAn[...<br/>Agents 3-9]
+        OA10[Agent 10<br/>preamble + context]
+        OA1 --> OA2 --> OAn --> OA10
+        OOut[~150K tokens<br/>same output]
+        OA10 --> OOut
+    end
+
+    subgraph New[Single Agent + Tools — token efficient]
+        direction TB
+        NA[One Agent<br/>1 preamble]
+        NT[4 Tools<br/>fetch on demand]
+        NOut[~35K tokens<br/>same output]
+        NA --> NT --> NOut
+    end
+
+    Old -.->|5x more tokens for same result| New
+```
+
 ### Best Use Cases
 
 1. **Launching a new product** — Understand the competitive landscape before entering a market
@@ -30,33 +54,36 @@ Earlier versions used 10 specialized agents, each with the same search tool. Tha
 
 ## How It Works
 
-```
-User Input (brand website + product info)
-         ↓
-┌──────────────────────────────────────────────────────────────┐
-│  Single Agent: Deep Market Research Analyst                  │
-│  Tools: batch_search, visit_page, scrape_website, save_report│
-│                                                              │
-│  Task 1: Brand Analysis                                      │
-│     scrape_website(brand) → batch_search → analyze           │
-│     ↓                                                        │
-│  Task 2: Desire & Problem Mapping                            │
-│     batch_search → visit_page → collect quotes               │
-│     ↓                                                        │
-│  Task 3: Competitor Research                                 │
-│     batch_search → visit_page(competitor sites)              │
-│     ↓                                                        │
-│  Task 4: Community Research (Reddit + Amazon)                │
-│     batch_search → visit_page(threads/reviews)               │
-│     ↓                                                        │
-│  Task 5: Market Analysis (social, sophistication, ad style)  │
-│     batch_search → visit_page(social content)                │
-│     ↓                                                        │
-│  Task 6: Final Report                                        │
-│     save_report → output/{brand}_market_research.md          │
-└──────────────────────────────────────────────────────────────┘
-         ↓
-Final Market Research Report (saved to output/)
+```mermaid
+flowchart TD
+    Input[📄 Input<br/>brand website + product info]
+
+    Agent[🤖 Single Agent — Deep Market Research Analyst<br/>1 context window · 4 tools]
+
+    subgraph Tools[Tools available to the agent]
+        BS[batch_search<br/>Exa API]
+        VP[visit_page<br/>Jina Reader + LLM extraction]
+        SW[scrape_website<br/>CrewAI built-in]
+        SR[save_report<br/>File output]
+    end
+
+    subgraph Tasks[6 Sequential Tasks — agent uses tools between each phase]
+        direction TB
+        T1["1. Brand Analysis<br/>scrape website → search"]
+        T2["2. Desire & Problem Mapping<br/>search → visit pages"]
+        T3["3. Competitor Research<br/>search → visit competitor sites"]
+        T4["4. Community Research<br/>Reddit + Amazon quotes"]
+        T5["5. Market Analysis<br/>social + sophistication + ad style"]
+        T6["6. Final Report<br/>save_report tool"]
+        T1 --> T2 --> T3 --> T4 --> T5 --> T6
+    end
+
+    Output[📊 25+ Page Market Research Report<br/>output/brand_market_research.md]
+
+    Input --> Agent
+    Agent -.->|calls on demand| Tools
+    Agent --> Tasks
+    Tasks --> Output
 ```
 
 **Token-efficient design:** `visit_page` uses Jina Reader (`r.jina.ai/{url}`) to fetch full page content, then an LLM extracts only the relevant info — so the agent stores summaries, not raw HTML. This keeps context small even after visiting 20+ pages.
