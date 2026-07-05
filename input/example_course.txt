@@ -1,0 +1,2 @@
+website: https://www.shipfast.com
+product: ShipFast is a Next.js boilerplate that helps developers launch SaaS products quickly. Includes auth, payments, database, and email setup. Target audience is indie hackers and solo developers.

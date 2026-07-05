@@ -1,0 +1,2 @@
+website: https://www.macrofactor.com
+product: MacroFactor is a science-based nutrition tracking app that adapts to your metabolism. It provides adaptive weekly nutrition recommendations. Target audience is fitness enthusiasts and data-driven dieters.

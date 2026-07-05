@@ -1,0 +1,2 @@
+website: https://notion.so
+product: Notion is an all-in-one workspace for notes, docs, project management, and wikis. Target audience is knowledge workers, startups, and teams looking for a unified productivity tool.
