@@ -28,3 +28,9 @@ output/
 
 # uv init boilerplate (not used by this project)
 main.py
+
+# Old IDE artifacts
+.trae/
+
+# Empty stale directories
+docs/

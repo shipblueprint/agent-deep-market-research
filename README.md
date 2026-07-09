@@ -95,7 +95,7 @@ flowchart TD
 ```bash
 git clone https://github.com/shipblueprint/deep-market-research-agent.git
 cd deep-market-research-agent
-uv install
+uv sync
 ```
 
 ### 2. Configure API Keys
@@ -103,7 +103,7 @@ uv install
 Copy the example env file and add your keys:
 
 ```bash
-copy .env.example .env
+cp .env.example .env
 ```
 
 Edit `.env`:
@@ -223,12 +223,7 @@ Use these in your prompt text to reference the target brand. They are substitute
 ### Writing Your Own Prompts
 
 1. **Start from the example template** — copy `prompts.example/` into `prompts/`:
-   ```powershell
-   # Windows PowerShell
-   Copy-Item -Path prompts.example\*.py -Destination prompts\ -Force
-   ```
    ```bash
-   # macOS/Linux
    cp prompts.example/*.py prompts/
    ```
 
@@ -309,7 +304,7 @@ deep-market-research-agent/
 
 **`ModuleNotFoundError: No module named 'prompts'`**
 - The `prompts/` directory is gitignored. If you cloned the repo, copy the example:
-  `Copy-Item -Path prompts.example\*.py -Destination prompts\ -Force`
+  `cp prompts.example/*.py prompts/`
 
 **API key errors**
 - Verify keys in `.env` are correct
