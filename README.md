@@ -1,3 +1,5 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) ![GitHub release](https://img.shields.io/github/v/release/shipblueprint/agent-deep-market-research)
+
 # Market Research Agent
 
 Generate a comprehensive market research report for any brand or product — competitive landscape, customer desires, Amazon/Reddit quotes, ad angles, and a strategic roadmap. One CrewAI agent with 4 tools, ~35K tokens per run.
