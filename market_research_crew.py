@@ -1,105 +1,71 @@
-from crewai import Agent, Task, Crew, Process, LLM
+"""Single-agent market research CLI built with CrewAI."""
+
+import importlib
+import os
+import sys
+
+from crewai import Agent, Crew, LLM, Process, Task
 from crewai_tools import ScrapeWebsiteTool
+from dotenv import load_dotenv
+
+import settings
 from tools.batch_search import BatchSearchTool
 from tools.visit_page import VisitPageTool
 from tools.save_report import SaveReportTool
-from prompts import (
-    SYSTEM_PROMPT,
-    BRAND_ANALYSIS_PROMPT,
-    DESIRE_MAPPING_PROMPT,
-    COMPETITOR_RESEARCH_PROMPT,
-    COMMUNITY_RESEARCH_PROMPT,
-    MARKET_ANALYSIS_PROMPT,
-    FINAL_REPORT_PROMPT,
-    MARKET_RESEARCH_PROMPT,
-)
-import os
-import re
-from dotenv import load_dotenv
 
 load_dotenv()
 
-# ============================================================================
-# Tool initialization
-# ============================================================================
-batch_search = BatchSearchTool()
-visit_page = VisitPageTool()
-scrape_website = ScrapeWebsiteTool()
-save_report = SaveReportTool()
 
-# ============================================================================
-# LLM configuration
-# ============================================================================
-llm_provider = os.getenv("LLM_PROVIDER", "ollama_cloud").lower()
+def load_prompts():
+    """Import prompts/, creating it from prompts.example/ on first run."""
+    settings.ensure_prompts()
+    return importlib.import_module("prompts")
 
-if llm_provider == "ollama_cloud":
-    llm = LLM(
-        model="openai/gpt-oss:20b-cloud",
-        temperature=0.7,
-        base_url="https://ollama.com/v1",
-        api_key=os.getenv("OLLAMA_API_KEY")
+
+def build_crew(llm: LLM) -> Crew:
+    """Build the single-agent, six-phase research crew."""
+    prompts = load_prompts()
+
+    batch_search = BatchSearchTool()
+    visit_page = VisitPageTool()
+    scrape_website = ScrapeWebsiteTool()
+    save_report = SaveReportTool()
+
+    market_researcher = Agent(
+        role="Deep Market Research Analyst",
+        goal=prompts.SYSTEM_PROMPT,
+        backstory=(
+            "You are an elite market researcher with 20+ years of experience in "
+            "consumer psychology, competitive analysis, and advertising strategy. "
+            "You conduct thorough multi-source investigations, visiting websites, "
+            "reading reviews, analyzing Reddit discussions, and studying social media. "
+            "You think strategically about positioning, desires, and market sophistication. "
+            "You always use your tools to gather real data before making conclusions. "
+            "You never fabricate information - if you can't find it, you say so."
+        ),
+        tools=[batch_search, visit_page, scrape_website, save_report],
+        verbose=True,
+        allow_delegation=False,
+        llm=llm,
+        max_iter=25,
+        memory=False,
     )
-    print("Using Ollama Cloud (gpt-oss:20b-cloud)")
-elif llm_provider == "openai":
-    llm = LLM(
-        model="openai/gpt-4o-mini",
-        temperature=0.7,
-        api_key=os.getenv("OPENAI_API_KEY")
-    )
-    print("Using OpenAI LLM")
-else:
-    llm = LLM(
-        model="openai/gpt-oss:20b-cloud",
-        temperature=0.7,
-        base_url="https://ollama.com/v1",
-        api_key=os.getenv("OLLAMA_API_KEY")
-    )
-    print("Using Ollama Cloud (gpt-oss:20b-cloud)")
 
-# ============================================================================
-# Single Agent - Deep Market Research Analyst
-# ============================================================================
-market_researcher = Agent(
-    role="Deep Market Research Analyst",
-    goal=SYSTEM_PROMPT,
-    backstory=(
-        "You are an elite market researcher with 20+ years of experience in "
-        "consumer psychology, competitive analysis, and advertising strategy. "
-        "You conduct thorough multi-source investigations, visiting websites, "
-        "reading reviews, analyzing Reddit discussions, and studying social media. "
-        "You think strategically about positioning, desires, and market sophistication. "
-        "You always use your tools to gather real data before making conclusions. "
-        "You never fabricate information - if you can't find it, you say so."
-    ),
-    tools=[batch_search, visit_page, scrape_website, save_report],
-    verbose=True,
-    allow_delegation=False,
-    llm=llm,
-    max_iter=25,
-    memory=False,
-)
-
-# ============================================================================
-# Tasks - Broken into phases so the agent uses tools between each phase
-# ============================================================================
-
-# Phase 1: Brand analysis (scrape website + search)
-brand_analysis_task = Task(
-    description=f"""Research the brand at: {{brand_website}}
+    brand_analysis_task = Task(
+        description=f"""Research the brand at: {{brand_website}}
 
 Additional product info: {{product_info}}
 
-{BRAND_ANALYSIS_PROMPT}
+{prompts.BRAND_ANALYSIS_PROMPT}
 
 Use scrape_website on {{brand_website}} first, then batch_search for additional context.
 Include direct quotes and source links.""",
-    expected_output="A detailed brand analysis (2-3 pages) with source links.",
-    agent=market_researcher,
-)
+        expected_output="A detailed brand analysis (2-3 pages) with source links.",
+        agent=market_researcher,
+    )
 
-# Phase 2: Desire + Problem mapping (search + visit pages)
-desire_mapping_task = Task(
-    description=f"""{DESIRE_MAPPING_PROMPT}
+    desire_mapping_task = Task(
+        description=f"""{prompts.DESIRE_MAPPING_PROMPT}
 
 Use batch_search with queries like:
 - "why developers use boilerplates"
@@ -109,15 +75,14 @@ Use batch_search with queries like:
 
 Then use visit_page on the most relevant results to get detailed content.
 Include 5-7 direct quotes per desire with source links.""",
-    expected_output="A detailed desire and problem mapping (2-3 pages) with quotes and sources.",
-    agent=market_researcher,
-)
+        expected_output="A detailed desire and problem mapping (2-3 pages) with quotes and sources.",
+        agent=market_researcher,
+    )
 
-# Phase 3: Competitor research (search + visit competitor sites)
-competitor_research_task = Task(
-    description=f"""Research competitors for: {{brand_website}}
+    competitor_research_task = Task(
+        description=f"""Research competitors for: {{brand_website}}
 
-{COMPETITOR_RESEARCH_PROMPT}
+{prompts.COMPETITOR_RESEARCH_PROMPT}
 
 Use batch_search with queries like:
 - "shipfast alternatives"
@@ -127,13 +92,12 @@ Use batch_search with queries like:
 
 Then use visit_page on at least 3-5 competitor websites to analyze them.
 Include specific examples and links.""",
-    expected_output="A comprehensive competitor analysis (2-3 pages) with links.",
-    agent=market_researcher,
-)
+        expected_output="A comprehensive competitor analysis (2-3 pages) with links.",
+        agent=market_researcher,
+    )
 
-# Phase 4: Reddit + Amazon research (search + visit threads/reviews)
-community_research_task = Task(
-    description=f"""{COMMUNITY_RESEARCH_PROMPT}
+    community_research_task = Task(
+        description=f"""{prompts.COMMUNITY_RESEARCH_PROMPT}
 
 Use batch_search with queries like:
 - "site:reddit.com shipfast"
@@ -144,13 +108,12 @@ Use batch_search with queries like:
 
 Then use visit_page on the most relevant Reddit threads and review pages.
 Include direct links to all threads.""",
-    expected_output="A rich collection of authentic customer language (2-3 pages) with links.",
-    agent=market_researcher,
-)
+        expected_output="A rich collection of authentic customer language (2-3 pages) with links.",
+        agent=market_researcher,
+    )
 
-# Phase 5: Social media + market sophistication
-market_analysis_task = Task(
-    description=f"""{MARKET_ANALYSIS_PROMPT}
+    market_analysis_task = Task(
+        description=f"""{prompts.MARKET_ANALYSIS_PROMPT}
 
 Use batch_search with queries like:
 - "shipfast tiktok"
@@ -160,53 +123,51 @@ Use batch_search with queries like:
 
 Then visit relevant pages to analyze content.
 Include links to specific content.""",
-    expected_output="A market analysis covering social media and sophistication (2-3 pages).",
-    agent=market_researcher,
-)
+        expected_output="A market analysis covering social media and sophistication (2-3 pages).",
+        agent=market_researcher,
+    )
 
-# Phase 6: Final report compilation (uses save_report tool)
-final_report_task = Task(
-    description=f"""FINAL STEP: Compile all your research into a comprehensive market research report.
+    final_report_task = Task(
+        description=f"""FINAL STEP: Compile all your research into a comprehensive market research report.
 
 Based on all the research you've conducted in previous tasks, create the final document.
 
-{FINAL_REPORT_PROMPT}
+{prompts.FINAL_REPORT_PROMPT}
 
 Use the save_report tool to save your report. Pass the full report content and use the brand name from {{brand_website}} as the filename.""",
-    expected_output="A comprehensive 25+ page market research document saved to output/ folder.",
-    agent=market_researcher,
-)
+        expected_output="A comprehensive market research document saved to the output/ folder.",
+        agent=market_researcher,
+    )
 
-# ============================================================================
-# Crew - Single agent, multiple sequential tasks
-# ============================================================================
-market_research_crew = Crew(
-    agents=[market_researcher],
-    tasks=[
-        brand_analysis_task,
-        desire_mapping_task,
-        competitor_research_task,
-        community_research_task,
-        market_analysis_task,
-        final_report_task,
-    ],
-    process=Process.sequential,
-    verbose=True,
-)
+    return Crew(
+        agents=[market_researcher],
+        tasks=[
+            brand_analysis_task,
+            desire_mapping_task,
+            competitor_research_task,
+            community_research_task,
+            market_analysis_task,
+            final_report_task,
+        ],
+        process=Process.sequential,
+        verbose=True,
+    )
 
 
-# ============================================================================
-# CLI Interface
-# ============================================================================
 def run_market_research(brand_website: str, product_info: str = ""):
     """Run the comprehensive market research crew."""
+    settings.validate_environment()
     print(f"🚀 Starting market research for: {brand_website}")
     print("=" * 60)
 
-    result = market_research_crew.kickoff(
+    llm = LLM(**settings.llm_kwargs())
+    print(f"Using {settings.provider_label()}")
+
+    crew = build_crew(llm)
+    result = crew.kickoff(
         inputs={
             "brand_website": brand_website,
-            "product_info": product_info
+            "product_info": product_info,
         }
     )
 
@@ -215,37 +176,16 @@ def run_market_research(brand_website: str, product_info: str = ""):
     print("\n📋 Final Report Summary:")
     print(result)
 
-    # Also save via Python (backup in case agent didn't use save_report tool)
-    output_dir = os.path.join(os.path.dirname(__file__), "output")
-    os.makedirs(output_dir, exist_ok=True)
-
-    brand_name = re.sub(
-        r'[^a-zA-Z0-9]',
-        '_',
-        brand_website.replace("https://", "").replace("http://", "").replace("www.", "").split("/")[0]
-    )
-    output_file = os.path.join(output_dir, f"{brand_name}_market_research.md")
-
-    report_content = f"""# Market Research Report: {brand_website}
-
-## Product Information
-{product_info}
-
----
-
-## Research Findings
-
-{str(result)}
-
----
-
-*Generated by Single-Agent Deep Market Research System*
-"""
-
-    with open(output_file, "w", encoding="utf-8") as f:
-        f.write(report_content)
-
-    print(f"\n📄 Report saved to: {output_file}")
+    reports = []
+    if settings.OUTPUT_DIR.is_dir():
+        reports = sorted(
+            settings.OUTPUT_DIR.glob("*_market_research.md"),
+            key=lambda path: path.stat().st_mtime,
+        )
+    if reports:
+        print(f"\n📄 Report saved to: {reports[-1]}")
+    else:
+        print("\n⚠️ No report file found in output/. The agent did not call save_report.")
 
     return result
 
@@ -257,6 +197,9 @@ def parse_input_file(filepath: str):
         website: https://example.com
         product: Some product info here
     """
+    if not os.path.isfile(filepath):
+        raise SystemExit(f"Input file not found: {filepath}")
+
     brand_website = ""
     product_info = ""
 
@@ -273,15 +216,23 @@ def parse_input_file(filepath: str):
     return brand_website, product_info
 
 
-if __name__ == "__main__":
-    import sys
-    import os
-
+def main(argv=None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
     input_dir = os.path.join(os.path.dirname(__file__), "input")
 
-    if len(sys.argv) > 1:
-        # Run with a specific input file: python market_research_crew.py input/example_saas.txt
-        input_file = sys.argv[1]
+    if argv and argv[0] in {"--check", "-c"}:
+        settings.ensure_prompts()
+        settings.validate_environment()
+        print("Environment OK: required keys are present.")
+        return 0
+
+    if argv and argv[0] in {"--help", "-h"}:
+        print("Usage: uv run python market_research_crew.py [input-file] [--check]")
+        return 0
+
+    if argv:
+        # Run with a specific input file: uv run python market_research_crew.py input/example_saas.txt
+        input_file = argv[0]
         if not os.path.isabs(input_file) and not os.path.exists(input_file):
             input_file = os.path.join(input_dir, input_file)
         brand_site, product_details = parse_input_file(input_file)
@@ -290,12 +241,14 @@ if __name__ == "__main__":
         # Interactive mode
         print("Available example inputs in input/ folder:")
         if os.path.exists(input_dir):
-            for f in os.listdir(input_dir):
-                if f.endswith(".txt"):
-                    print(f"  - input/{f}")
+            for filename in sorted(os.listdir(input_dir)):
+                if filename.endswith(".txt"):
+                    print(f"  - input/{filename}")
         print()
 
-        brand_site = input("Enter brand website OR input filename (e.g., input/example_saas.txt): ").strip()
+        brand_site = input(
+            "Enter brand website OR input filename (e.g., input/example_saas.txt): "
+        ).strip()
 
         # If input is a file path, load from it
         if brand_site.endswith(".txt") or "/" in brand_site or "\\" in brand_site:
@@ -305,10 +258,17 @@ if __name__ == "__main__":
             brand_site, product_details = parse_input_file(filepath)
             print(f"📄 Loaded input from: {filepath}")
         else:
-            product_details = input("Enter any additional product information (optional): ").strip()
+            product_details = input(
+                "Enter any additional product information (optional): "
+            ).strip()
 
     if not brand_site:
         print("❌ No brand website provided. Exiting.")
-        sys.exit(1)
+        return 1
 
     run_market_research(brand_site, product_details)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

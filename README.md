@@ -2,14 +2,14 @@
 
 # Market Research Agent
 
-Generate a comprehensive market research report for any brand or product — competitive landscape, customer desires, Amazon/Reddit quotes, ad angles, and a strategic roadmap. One CrewAI agent with 4 tools, ~35K tokens per run.
+Generate a comprehensive market research report for any brand or product: competitive landscape, customer desires, Amazon/Reddit quotes, ad angles, and a strategic roadmap. One CrewAI agent with four tools.
 
 ## Quick Start
 
 ```bash
 # 1. Install
-git clone https://github.com/shipblueprint/deep-market-research-agent.git
-cd deep-market-research-agent
+git clone https://github.com/shipblueprint/agent-deep-market-research.git
+cd agent-deep-market-research
 uv sync
 
 # 2. Add your API keys (see below)
@@ -17,10 +17,10 @@ cp .env.example .env
 # Edit .env in any text editor
 
 # 3. Run on an example
-python market_research_crew.py input/example_saas.txt
+uv run python market_research_crew.py input/example_saas.txt
 ```
 
-The script takes 2-5 minutes (visits 20+ pages, 6 research phases). Results land in `output/`.
+The first run creates `prompts/` from `prompts.example/` automatically. The script takes 2-5 minutes: it visits 20+ pages across 6 research phases. Results land in `output/`.
 
 ---
 
@@ -36,7 +36,7 @@ The script takes 2-5 minutes (visits 20+ pages, 6 research phases). Results land
 
 ---
 
-## 1. API Keys (where to put them)
+## 1. API Keys
 
 Copy the template and fill in your keys:
 
@@ -63,7 +63,13 @@ EXA_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 # JINA_API_KEY=jina_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-**Only two keys are mandatory:** Exa API key + one LLM key (Ollama Cloud or OpenAI).
+**Only two keys are mandatory:** Exa API key plus one LLM key (Ollama Cloud or OpenAI).
+
+Check the setup without spending tokens:
+
+```bash
+uv run python market_research_crew.py --check
+```
 
 ---
 
@@ -72,7 +78,7 @@ EXA_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ### Use an example input file (easiest)
 
 ```bash
-python market_research_crew.py input/example_saas.txt
+uv run python market_research_crew.py input/example_saas.txt
 ```
 
 Replace `example_saas.txt` with:
@@ -88,10 +94,10 @@ Replace `example_saas.txt` with:
 ### Interactive mode
 
 ```bash
-python market_research_crew.py
+uv run python market_research_crew.py
 ```
 
-It'll prompt you for a brand URL and product description, or let you pick from the examples.
+It prompts for a brand URL and product description, or lets you pick from the examples.
 
 ### Research your own brand
 
@@ -105,16 +111,16 @@ product: Brief description of the product, target audience, and key value propos
 Then run:
 
 ```bash
-python market_research_crew.py input/your-file.txt
+uv run python market_research_crew.py input/your-file.txt
 ```
 
 ### Windows users
 
-Replace `cp` with `copy` in PowerShell, and use `python` the same way:
+Replace `cp` with `copy` in PowerShell. `uv run` works the same way:
 
 ```powershell
 copy .env.example .env
-python market_research_crew.py input/example_saas.txt
+uv run python market_research_crew.py input/example_saas.txt
 ```
 
 ---
@@ -125,11 +131,13 @@ The report in `output/` covers:
 
 - **Brand positioning** — how the brand presents itself
 - **Customer desire mapping** — what customers actually want, with direct quotes
-- **Competitor landscape** — 10-15 competitors with source links
-- **Customer voice** — 40+ Amazon review quotes + 50+ Reddit quotes
+- **Competitor landscape** — competitors with source links
+- **Customer voice** — Amazon review and Reddit quotes with links
 - **Market analysis** — social media hooks, market sophistication, ad style
-- **Ad concepts** — 3+ campaign angles with rationale
+- **Ad concepts** — campaign angles with rationale
 - **Strategic roadmap** — recommended next steps
+
+Reports are named `<brand>_market_research.md`. Treat quotes and statistics as leads until the linked source is checked.
 
 ---
 
@@ -137,16 +145,18 @@ The report in `output/` covers:
 
 | Problem | Fix |
 |---------|-----|
-| `ModuleNotFoundError: No module named 'prompts'` | Run `cp prompts.example/*.py prompts/` — the prompts/ directory is gitignored and needs to be created on first clone |
+| `ModuleNotFoundError: No module named 'prompts'` | Run from the project root. `prompts/` is created automatically on first run; if it is missing, run `cp prompts.example/*.py prompts/` |
+| `Missing required environment variables` | Add the named keys to `.env` in the project root |
+| `Unsupported LLM_PROVIDER` | Set `LLM_PROVIDER` to `ollama_cloud` or `openai` |
 | `No brand website provided` | Make sure your input file starts with `website: https://...` |
-| `API key errors` | Check `.env` keys are correct and `.env` is in the project root |
 | `Rate limited (Ollama free tier)` | Free tier has session limits. Wait or switch to `LLM_PROVIDER=openai` |
-| Agent running slowly | Expected — it visits 20+ pages across 6 phases. Check console for progress |
+| `No report file found in output/` | The agent did not call `save_report`. Re-run the final phase or check the console trace |
+| Agent running slowly | Expected — it visits 20+ pages across 6 phases. Check console progress |
 | `uv: command not found` | Install uv: `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
 
 ---
 
-## How it works (for the curious)
+## How it works
 
 A **single CrewAI agent** runs 6 research phases sequentially. Between phases it uses its tools:
 
@@ -163,10 +173,10 @@ A **single CrewAI agent** runs 6 research phases sequentially. Between phases it
 
 | 10-agent crew | Single-agent + tools |
 |---|---|
-| Each agent re-reads the same context → ~5x tokens | One agent holds context once, tools fetch on demand |
+| Each agent re-reads the same context | One agent holds context once, tools fetch on demand |
 | Tools duplicated across all agents | Tools owned by one agent, used when needed |
 | Hard to debug which agent failed | Single linear trace |
-| ~150K tokens per run | ~35K tokens per run |
+| Higher token use | Lower token use |
 
 ### Tools
 
@@ -177,6 +187,8 @@ A **single CrewAI agent** runs 6 research phases sequentially. Between phases it
 | `scrape_website` | Full website scrape | CrewAI built-in |
 | `save_report` | Writes report to `output/` | Local file |
 
+Page extraction uses the same provider as the main model. `LLM_PROVIDER=openai` uses `OPENAI_API_KEY`; `LLM_PROVIDER=ollama_cloud` uses `OLLAMA_API_KEY`.
+
 ---
 
 ## Customizing prompts
@@ -185,9 +197,18 @@ Research methodology lives in `prompts/` — one file per phase. Edit them to ch
 
 ### First time setup
 
+`prompts/` is gitignored. The first run copies the templates automatically:
+
 ```bash
-# prompts/ is gitignored — copy the example templates
-cp prompts.example/*.py prompts/
+uv run python market_research_crew.py input/example_saas.txt
+# Created prompts/ from prompts.example/
+```
+
+To reset your local copy:
+
+```bash
+rm -rf prompts/
+uv run python market_research_crew.py --check
 ```
 
 ### File layout
@@ -197,11 +218,11 @@ prompts/
 ├── __init__.py              # Exports all prompts
 ├── system_prompt.py         # Agent goal + tool usage rules
 ├── brand_analysis.py        # Phase 1
-├── desire_mapping.py         # Phase 2
-├── competitor_research.py    # Phases 3-4
-├── community_research.py     # Phases 5-6
-├── market_analysis.py        # Phases 7-9
-└── final_report.py           # Phase 10
+├── desire_mapping.py        # Phase 2
+├── competitor_research.py   # Phase 3
+├── community_research.py    # Phase 4
+├── market_analysis.py       # Phase 5
+└── final_report.py          # Phase 6
 ```
 
 Each file exports one constant (e.g., `BRAND_ANALYSIS_PROMPT`). Two placeholders are available:
@@ -225,6 +246,7 @@ Each file exports one constant (e.g., `BRAND_ANALYSIS_PROMPT`). Two placeholders
 
 ```
 ├── market_research_crew.py    # Agent, tasks, crew, CLI
+├── settings.py                # Provider config, env checks, paths
 ├── prompts/                   # Research methodology (gitignored)
 ├── prompts.example/           # Public templates
 ├── tools/
@@ -233,11 +255,24 @@ Each file exports one constant (e.g., `BRAND_ANALYSIS_PROMPT`). Two placeholders
 │   └── save_report.py         # File output
 ├── input/                     # Example input files
 ├── output/                    # Generated reports (gitignored)
+├── tests/                     # Offline unit tests
+├── .github/workflows/ci.yml   # Test workflow
 ├── .env                       # API keys (gitignored)
 ├── .env.example               # API key template
 ├── pyproject.toml             # Dependencies
 └── README.md
 ```
+
+## Development
+
+Run the offline test suite:
+
+```bash
+uv sync
+uv run python -m unittest discover -s tests -t . -v
+```
+
+The tests do not call Exa, Jina, or any LLM. CI runs the same command on Python 3.11.
 
 ## LLM provider details
 
@@ -249,8 +284,8 @@ OLLAMA_API_KEY=ok-...
 ```
 
 - Default model: `gpt-oss:20b-cloud` (free, good for testing)
-- Upgrade: `gpt-oss:120b-cloud` (edit model name in `market_research_crew.py`)
-- Limits: 1 concurrent model, session + weekly caps
+- Upgrade: set `OLLAMA_MODEL=gpt-oss:120b-cloud`
+- Limits: 1 concurrent model, session and weekly caps
 
 ### OpenAI (paid)
 
@@ -259,5 +294,17 @@ LLM_PROVIDER=openai
 OPENAI_API_KEY=sk-...
 ```
 
-- Model: `gpt-4o-mini`
-- Best quality, no rate limits, costs money
+- Default model: `gpt-4o-mini`
+- Override with `OPENAI_MODEL=gpt-4o`
+- Better quality, no free-tier session caps, costs money
+
+### Optional overrides
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `OLLAMA_MODEL` | `gpt-oss:20b-cloud` | Main model on Ollama Cloud |
+| `OPENAI_MODEL` | `gpt-4o-mini` | Main model on OpenAI |
+| `EXTRACTION_MODEL` | provider default | Model used by `visit_page` |
+| `LLM_TEMPERATURE` | `0.7` | Main model temperature |
+| `LLM_BASE_URL` | `https://ollama.com/v1` | Ollama-compatible endpoint |
+| `OPENAI_BASE_URL` | unset | Optional OpenAI-compatible endpoint |

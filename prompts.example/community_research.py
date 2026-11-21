@@ -2,14 +2,18 @@
 
 COMMUNITY_RESEARCH_PROMPT = """## COMMUNITY RESEARCH
 
-Research what real users say in online communities:
+Gather unfiltered customer language from public communities.
 
-- Find relevant Reddit threads about this product category
-- Look for Amazon reviews of similar products
-- Collect 10-20 direct quotes showing how customers talk about:
-  - Their desires and needs
-  - Their experiences with similar products
-  - Questions they have before buying
-  - What they like and dislike
+Where to look:
+- Subreddits and forum threads for the category
+- Product reviews on Amazon and specialist retailers
+- Comment sections under relevant videos or posts
 
-Include direct links to all sources."""
+Capture at least 15 quotes that show:
+- What the audience wants, and the outcome they picture
+- How current products disappoint them
+- Doubts that delay a purchase
+- Objections and past bad experiences
+- Wins they credit to a product
+
+Quote people exactly. Link every source."""

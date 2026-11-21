@@ -12,12 +12,12 @@ wheels/
 # Environment variables
 .env
 
-# Private prompts (may contain paid/licensed methodology)
+# Private prompts
 # The prompts.example/ directory contains the public template
 prompts/
 prompts.py
 
-# Original purchased prompt document (license unknown)
+# Local reference material
 comprehensive Market Research.md
 
 # Test artifacts
@@ -31,6 +31,13 @@ main.py
 
 # Old IDE artifacts
 .trae/
+
+# Codegraph index
+.codegraph/
+
+# Test caches
+.pytest_cache/
+.ruff_cache/
 
 # Empty stale directories
 docs/

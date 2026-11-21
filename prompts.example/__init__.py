@@ -7,17 +7,16 @@ directly. It is meant to be read, customized, and copied into `prompts/`.
 
 To use these example prompts as a starting point:
 1. Copy this directory's contents into the prompts/ directory:
-       Copy-Item -Path prompts.example\\*.py -Destination prompts\\ -Force
-   (On macOS/Linux: cp prompts.example/*.py prompts/)
+       cp prompts.example/*.py prompts/
 2. Edit each file in prompts/ with your own research questions and methodology
-3. Run the agent: python market_research_crew.py
+3. Run the agent: uv run python market_research_crew.py
 
 The imports below intentionally reference `prompts.X` (not `prompts.example.X`)
 so that this file works correctly once it is placed inside prompts/__init__.py.
 When this file lives in prompts.example/, it is a reference document only.
 
 Each file (system_prompt.py, brand_analysis.py, etc.) is self-contained and
-defines a single prompt constant. See prompts.example/README.md for details.
+defines a single prompt constant. See the root README for details.
 """
 
 # NOTE: These imports are written to match prompts/__init__.py exactly.

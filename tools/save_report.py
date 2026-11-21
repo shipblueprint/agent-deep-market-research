@@ -1,6 +1,6 @@
 from crewai.tools import BaseTool
-import os
-import re
+
+import settings
 
 
 class SaveReportTool(BaseTool):
@@ -12,14 +12,7 @@ class SaveReportTool(BaseTool):
     )
 
     def _run(self, content: str, brand_name: str = "report") -> str:
-        output_dir = os.path.join(os.getcwd(), "output")
-        os.makedirs(output_dir, exist_ok=True)
-
-        safe_name = re.sub(r'[^a-zA-Z0-9_-]', '_', brand_name)
-        filename = f"{safe_name}_market_research.md"
-        filepath = os.path.join(output_dir, filename)
-
-        with open(filepath, "w", encoding="utf-8") as f:
-            f.write(content)
-
+        settings.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        filepath = settings.report_path(brand_name)
+        filepath.write_text(content, encoding="utf-8")
         return f"Report saved to: {filepath}"

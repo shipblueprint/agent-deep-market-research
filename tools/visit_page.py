@@ -4,6 +4,8 @@ import os
 import json
 from openai import OpenAI
 
+import settings
+
 EXTRACTOR_PROMPT = """Please process the following webpage content and user goal to extract relevant information:
 
 ## Webpage Content
@@ -79,15 +81,21 @@ class VisitPageTool(BaseTool):
             return f"[visit] Failed: {str(e)}"
 
     def _extract_info(self, content: str, goal: str, url: str) -> str:
-        api_key = os.getenv("OLLAMA_API_KEY", "")
-        base_url = os.getenv("LLM_BASE_URL", "https://ollama.com/v1")
-        model = os.getenv("EXTRACTION_MODEL", "gpt-oss:20b-cloud")
+        config = settings.extraction_config()
+        if not config["api_key"]:
+            return (
+                f"URL: {url}\nContent (truncated): {content[:2000]}\n"
+                f"[Extraction skipped: no API key for {settings.llm_provider()}]\n"
+            )
 
         try:
-            client = OpenAI(api_key=api_key, base_url=base_url)
+            client_kwargs = {"api_key": config["api_key"], "timeout": 60}
+            if config["base_url"]:
+                client_kwargs["base_url"] = config["base_url"]
+            client = OpenAI(**client_kwargs)
             prompt = EXTRACTOR_PROMPT.format(webpage_content=content, goal=goal)
             response = client.chat.completions.create(
-                model=model,
+                model=config["model"],
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.3
             )
