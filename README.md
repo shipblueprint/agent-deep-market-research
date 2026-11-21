@@ -28,7 +28,7 @@ The first run creates `prompts/` from `prompts.example/` automatically. The scri
 
 | Thing | Required? | Get it |
 |-------|-----------|--------|
-| **Python 3.11+** | ✅ | `python3 --version` |
+| **Python 3.11.5+** | ✅ | `python3 --version` |
 | **uv** (package manager) | ✅ | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
 | **Exa API key** | ✅ | [exa.ai](https://exa.ai) — free tier: 1,000 searches/month |
 | **Ollama Cloud key** or **OpenAI key** | ✅ (pick one) | [Ollama Cloud free tier](https://ollama.com/settings/keys) or [OpenAI](https://platform.openai.com/api-keys) |
