@@ -1,4 +1,4 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) ![GitHub release](https://img.shields.io/github/v/release/shipblueprint/agent-deep-market-research)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) ![GitHub release](https://img.shields.io/github/v/release/shipschematic/agent-deep-market-research)
 
 # Market Research Agent
 
@@ -8,7 +8,7 @@ Generate a comprehensive market research report for any brand or product: compet
 
 ```bash
 # 1. Install
-git clone https://github.com/shipblueprint/agent-deep-market-research.git
+git clone https://github.com/shipschematic/agent-deep-market-research.git
 cd agent-deep-market-research
 uv sync
 

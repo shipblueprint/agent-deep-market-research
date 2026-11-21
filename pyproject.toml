@@ -15,4 +15,4 @@ dependencies = [
 ]
 
 [project.urls]
-Repository = "https://github.com/shipblueprint/agent-deep-market-research"
+Repository = "https://github.com/shipschematic/agent-deep-market-research"
