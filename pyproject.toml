@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Token-efficient single-agent market research system built with CrewAI"
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.11"
+requires-python = ">=3.11.5"
 dependencies = [
     "crewai[tools]>=1.15.1",
     "exa-py>=2.16.0",
@@ -16,3 +16,7 @@ dependencies = [
 
 [project.urls]
 Repository = "https://github.com/shipschematic/agent-deep-market-research"
+
+[tool.uv]
+# soupsieve <4.0 has open advisories; all supported Python versions must use a fixed release.
+constraint-dependencies = ["soupsieve>=4.0.0"]
